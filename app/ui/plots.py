@@ -4,6 +4,7 @@ from app.models.black_scholes import black_scholes_price, black_scholes_greeks
 from app.models.binomial_tree import binomial_tree_price
 from app.models.heston import heston_price
 from app.models.hull_white import hull_white_bond_option
+from app.models.cds import cds_par_spread
 
 def plot_bs_price_surface(K, T, r, sigma, option_type, S=None):
     if S is None:
@@ -82,6 +83,19 @@ def plot_hull_white_price_surface(r0, t, T, a, sigma, K):
     fig.update_layout(title="Hull-White Bond Option Price Surface", scene=dict(xaxis_title="Bond Maturity (S)", yaxis_title="Strike (K)", zaxis_title="Price"))
     return fig
 
+def plot_cds_par_spread_surface(maturity, r, recovery):
+    hazard = np.linspace(0.001, 0.1, 20)
+    rec = np.linspace(0.0, 0.8, 20)
+    hazard_grid, rec_grid = np.meshgrid(hazard, rec)
+    spread_grid = np.zeros_like(hazard_grid)
+    notional = 1_000_000
+    for i in range(hazard_grid.shape[0]):
+        for j in range(hazard_grid.shape[1]):
+            spread_grid[i, j] = cds_par_spread(notional, maturity, r, hazard_grid[i, j], rec_grid[i, j])
+    fig = go.Figure(data=[go.Surface(z=spread_grid, x=hazard, y=rec, colorscale='Oranges')])
+    fig.update_layout(title="CDS Par Spread Surface", scene=dict(xaxis_title="Hazard Rate", yaxis_title="Recovery Rate", zaxis_title="Par Spread"))
+    return fig
+
 def plot_heatmap_2d(x, y, z, x_label, y_label, z_label, title, colorscale='Viridis'):
     fig = go.Figure(data=go.Heatmap(z=z, x=x, y=y, colorscale=colorscale, colorbar=dict(title=z_label)))
     fig.update_layout(title=title, xaxis_title=x_label, yaxis_title=y_label)
@@ -137,4 +151,15 @@ def plot_hull_white_dv01_heatmap(r0, t, T, a, sigma, K):
     for i in range(S_grid.shape[0]):
         for j in range(S_grid.shape[1]):
             dv01_grid[i, j] = hull_white_dv01(r0, t, T, S_grid[i, j], K_grid[i, j], a, sigma, P0T, 'call')
-    return plot_heatmap_2d(S, strike, dv01_grid, "Bond Maturity (S)", "Strike (K)", "DV01", "Hull-White DV01 Heatmap", colorscale='Greens') 
+    return plot_heatmap_2d(S, strike, dv01_grid, "Bond Maturity (S)", "Strike (K)", "DV01", "Hull-White DV01 Heatmap", colorscale='Greens')
+
+def plot_cds_pv01_heatmap(maturity, r, recovery):
+    hazard = np.linspace(0.001, 0.1, 20)
+    rec = np.linspace(0.0, 0.8, 20)
+    hazard_grid, rec_grid = np.meshgrid(hazard, rec)
+    pv01_grid = np.zeros_like(hazard_grid)
+    notional = 1_000_000
+    for i in range(hazard_grid.shape[0]):
+        for j in range(hazard_grid.shape[1]):
+            pv01_grid[i, j] = cds_pv01(notional, maturity, r, hazard_grid[i, j], rec_grid[i, j])
+    return plot_heatmap_2d(hazard, rec, pv01_grid, "Hazard Rate", "Recovery Rate", "PV01", "CDS PV01 Heatmap", colorscale='Oranges') 

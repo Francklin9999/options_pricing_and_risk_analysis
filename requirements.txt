@@ -1,0 +1,11 @@
+numpy
+scipy
+pandas
+matplotlib
+plotly
+streamlit
+sqlalchemy
+reportlab
+yfinance
+pytest
+loguru 

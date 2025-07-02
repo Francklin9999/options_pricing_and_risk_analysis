@@ -88,23 +88,23 @@ def risk_dashboard_page():
     for pos in st.session_state['portfolio']:
         model = pos['model']
         if model == "Black-Scholes":
-            from app.models.black_scholes import black_scholes_greeks, black_scholes_price
+            from ..models.black_scholes import black_scholes_greeks, black_scholes_price
             greeks = black_scholes_greeks(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
             price = black_scholes_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
             risk_rows.append({**pos, 'price': price, **greeks})
         elif model == "Binomial Tree":
-            from app.models.binomial_tree import binomial_tree_price, binomial_tree_delta, binomial_tree_gamma
+            from ..models.binomial_tree import binomial_tree_price, binomial_tree_delta, binomial_tree_gamma
             price = binomial_tree_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
             delta = binomial_tree_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
             gamma = binomial_tree_gamma(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
             risk_rows.append({**pos, 'price': price, 'delta': delta, 'gamma': gamma})
         elif model == "Heston":
-            from app.models.heston import heston_price, heston_delta
+            from ..models.heston import heston_price, heston_delta
             price = heston_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
             delta = heston_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
             risk_rows.append({**pos, 'price': price, 'delta': delta})
         elif model == "Hull-White":
-            from app.models.hull_white import hull_white_bond_option, hull_white_dv01
+            from ..models.hull_white import hull_white_bond_option, hull_white_dv01
             def P0T(T_):
                 return np.exp(-pos['r0'] * T_)
             price = hull_white_bond_option(pos['r0'], pos['t'], pos['T'], pos['S'], pos['K'], pos['a'], pos['sigma'], P0T, 'call')
@@ -131,13 +131,13 @@ def risk_dashboard_page():
                 S = pos['S']
                 notional = pos['notional']
                 if pos['model'] == "Black-Scholes":
-                    from app.models.black_scholes import black_scholes_greeks
+                    from ..models.black_scholes import black_scholes_greeks
                     delta = black_scholes_greeks(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])['delta']
                 elif pos['model'] == "Binomial Tree":
-                    from app.models.binomial_tree import binomial_tree_delta
+                    from ..models.binomial_tree import binomial_tree_delta
                     delta = binomial_tree_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                 elif pos['model'] == "Heston":
-                    from app.models.heston import heston_delta
+                    from ..models.heston import heston_delta
                     delta = heston_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                 deltas.append(delta * notional)
                 spots.append(S)
@@ -164,15 +164,15 @@ def risk_dashboard_page():
                     shocked_S = spots[j] * (1 + spot_shocks[i, j])
                     notional = notionals[j]
                     if pos['model'] == "Black-Scholes":
-                        from app.models.black_scholes import black_scholes_price
+                        from ..models.black_scholes import black_scholes_price
                         base = black_scholes_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                         shocked = black_scholes_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                     elif pos['model'] == "Binomial Tree":
-                        from app.models.binomial_tree import binomial_tree_price
+                        from ..models.binomial_tree import binomial_tree_price
                         base = binomial_tree_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                         shocked = binomial_tree_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                     elif pos['model'] == "Heston":
-                        from app.models.heston import heston_price
+                        from ..models.heston import heston_price
                         base = heston_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                         shocked = heston_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                     total_pnl += (shocked - base) * notional
@@ -225,13 +225,13 @@ def risk_dashboard_page():
                         S = pos['S']
                         notional = pos['notional']
                         if pos['model'] == "Black-Scholes":
-                            from app.models.black_scholes import black_scholes_greeks
+                            from ..models.black_scholes import black_scholes_greeks
                             delta = black_scholes_greeks(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])['delta']
                         elif pos['model'] == "Binomial Tree":
-                            from app.models.binomial_tree import binomial_tree_delta
+                            from ..models.binomial_tree import binomial_tree_delta
                             delta = binomial_tree_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                         elif pos['model'] == "Heston":
-                            from app.models.heston import heston_delta
+                            from ..models.heston import heston_delta
                             delta = heston_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                         deltas.append(delta * notional)
                         spots.append(S)
@@ -270,15 +270,15 @@ def risk_dashboard_page():
                             shocked_S = spots[j] * (1 + spot_shocks[i, j])
                             notional = notionals[j]
                             if pos['model'] == "Black-Scholes":
-                                from app.models.black_scholes import black_scholes_price
+                                from ..models.black_scholes import black_scholes_price
                                 base = black_scholes_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                                 shocked = black_scholes_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                             elif pos['model'] == "Binomial Tree":
-                                from app.models.binomial_tree import binomial_tree_price
+                                from ..models.binomial_tree import binomial_tree_price
                                 base = binomial_tree_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                                 shocked = binomial_tree_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                             elif pos['model'] == "Heston":
-                                from app.models.heston import heston_price
+                                from ..models.heston import heston_price
                                 base = heston_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                                 shocked = heston_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                             total_pnl += (shocked - base) * notional
@@ -325,15 +325,15 @@ def risk_dashboard_page():
                             shocked_S = spots[j] * (1 + spot_shocks[i, j])
                             notional = notionals[j]
                             if pos['model'] == "Black-Scholes":
-                                from app.models.black_scholes import black_scholes_price
+                                from ..models.black_scholes import black_scholes_price
                                 base = black_scholes_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                                 shocked = black_scholes_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                             elif pos['model'] == "Binomial Tree":
-                                from app.models.binomial_tree import binomial_tree_price
+                                from ..models.binomial_tree import binomial_tree_price
                                 base = binomial_tree_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                                 shocked = binomial_tree_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                             elif pos['model'] == "Heston":
-                                from app.models.heston import heston_price
+                                from ..models.heston import heston_price
                                 base = heston_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                                 shocked = heston_price(shocked_S, pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                             total_pnl += (shocked - base) * notional
@@ -367,15 +367,15 @@ def risk_dashboard_page():
                         shocked_r = pos['r'] + rate_shocks[i, j]
                         notional = pos['notional']
                         if pos['model'] == "Black-Scholes":
-                            from app.models.black_scholes import black_scholes_price
+                            from ..models.black_scholes import black_scholes_price
                             base = black_scholes_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                             shocked = black_scholes_price(shocked_S, pos['K'], pos['T'], shocked_r, pos['sigma'], pos['option_type'])
                         elif pos['model'] == "Binomial Tree":
-                            from app.models.binomial_tree import binomial_tree_price
+                            from ..models.binomial_tree import binomial_tree_price
                             base = binomial_tree_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                             shocked = binomial_tree_price(shocked_S, pos['K'], pos['T'], shocked_r, pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                         elif pos['model'] == "Heston":
-                            from app.models.heston import heston_price
+                            from ..models.heston import heston_price
                             base = heston_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                             shocked = heston_price(shocked_S, pos['K'], pos['T'], shocked_r, pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                         total_pnl += (shocked - base) * notional
@@ -407,15 +407,15 @@ def risk_dashboard_page():
                     shocked_r = pos['r'] + rate_shock
                     notional = pos['notional']
                     if pos['model'] == "Black-Scholes":
-                        from app.models.black_scholes import black_scholes_price
+                        from ..models.black_scholes import black_scholes_price
                         base = black_scholes_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])
                         shocked = black_scholes_price(shocked_S, pos['K'], pos['T'], shocked_r, pos['sigma'], pos['option_type'])
                     elif pos['model'] == "Binomial Tree":
-                        from app.models.binomial_tree import binomial_tree_price
+                        from ..models.binomial_tree import binomial_tree_price
                         base = binomial_tree_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                         shocked = binomial_tree_price(shocked_S, pos['K'], pos['T'], shocked_r, pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                     elif pos['model'] == "Heston":
-                        from app.models.heston import heston_price
+                        from ..models.heston import heston_price
                         base = heston_price(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                         shocked = heston_price(shocked_S, pos['K'], pos['T'], shocked_r, pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                     total_pnl += (shocked - base) * notional
@@ -432,13 +432,13 @@ def risk_dashboard_page():
             for pos in st.session_state['portfolio']:
                 if pos['model'] in ["Black-Scholes", "Binomial Tree", "Heston"]:
                     if pos['model'] == "Black-Scholes":
-                        from app.models.black_scholes import black_scholes_greeks
+                        from ..models.black_scholes import black_scholes_greeks
                         delta = black_scholes_greeks(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['option_type'])['delta']
                     elif pos['model'] == "Binomial Tree":
-                        from app.models.binomial_tree import binomial_tree_delta
+                        from ..models.binomial_tree import binomial_tree_delta
                         delta = binomial_tree_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['sigma'], pos['steps'], pos['option_type'], pos['exercise'])
                     elif pos['model'] == "Heston":
-                        from app.models.heston import heston_delta
+                        from ..models.heston import heston_delta
                         delta = heston_delta(pos['S'], pos['K'], pos['T'], pos['r'], pos['v0'], pos['kappa'], pos['theta'], pos['sigma'], pos['rho'], pos['option_type'])
                     deltas.append(abs(delta * pos['notional']))
                     labels.append(f"{pos['model']} {pos.get('option_type','')}")

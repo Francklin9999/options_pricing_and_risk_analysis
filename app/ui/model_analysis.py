@@ -55,8 +55,8 @@ def model_analysis_page():
         "Heston",
         # "Hull-White",
         "Barrier Option",
-        "Lookback Option",
-        "American Option"
+        "Lookback Option"
+        # "American Option"
     ])
 
     param_config_black_scholes = [

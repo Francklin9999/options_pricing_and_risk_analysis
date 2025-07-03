@@ -5,106 +5,129 @@ import plotly.graph_objs as go
 
 model_descriptions = {
     "Black-Scholes": (
-        "The Black-Scholes model is a closed-form solution for pricing European options. "
-        "It assumes lognormal asset returns, constant volatility, and no dividends. "
-        "The model provides analytical formulas for call and put prices, as well as all Greeks.\n\n"
+        "Closed-form model for European options assuming log-normal returns, "
+        "constant volatility, friction-less markets, continuous trading and no arbitrage. "
+        "Dividends can be handled by a continuous dividend yield q.\n\n"
         "**Parameters:**\n"
-        "- S: Spot price of the underlying asset\n"
-        "- K: Strike price\n"
-        "- T: Time to maturity\n"
-        "- r: Risk-free interest rate\n"
-        "- σ: Volatility of the underlying asset",
+        "- S  : Current spot price of the underlying asset\n"
+        "- K  : Strike price\n"
+        "- T  : Time to maturity (in years)\n"
+        "- r  : Continuously-compounded risk-free rate\n"
+        "- q  : Continuous dividend yield (0 if none)\n"
+        "- σ  : Constant volatility of the underlying asset return",
         [
-            r"C = S N(d_1) - K e^{-rT} N(d_2)",
-            r"P = K e^{-rT} N(-d_2) - S N(-d_1)",
-            r"d_1 = \frac{\ln\left(\frac{S}{K}\right) + \left(r + \frac{\sigma^2}{2}\right)T}{\sigma\sqrt{T}}",
+            r"C = S e^{-qT} N(d_1) - K e^{-rT} N(d_2)",
+            r"P = K e^{-rT} N(-d_2) - S e^{-qT} N(-d_1)",
+            r"d_1 = \frac{\ln(S/K) + (r - q + 0.5\sigma^{2})T}{\sigma\sqrt{T}}",
             r"d_2 = d_1 - \sigma\sqrt{T}",
         ]
     ),
+
     "Binomial Tree": (
-        "The Binomial Tree model prices options by simulating possible paths for the underlying asset using discrete time steps. "
-        "It can handle American and European options, and allows for early exercise.\n\n"
+        "Discrete-time lattice that models the underlying price as moving up by factor *u* or "
+        "down by factor *d* each step. Risk-neutral probability *p* is chosen so that the tree "
+        "replicates the risk-free drift. Early exercise is handled by comparing intrinsic and "
+        "continuation values at each node, making the method suitable for American and exotic "
+        "features.\n\n"
         "**Parameters:**\n"
-        "- S: Spot price\n"
-        "- K: Strike price\n"
-        "- T: Time to maturity\n"
-        "- r: Risk-free rate\n"
-        "- σ: Volatility\n"
-        "- N: Number of steps",
+        "- S  : Current spot price\n"
+        "- K  : Strike price\n"
+        "- T  : Time to maturity (years)\n"
+        "- r  : Risk-free rate\n"
+        "- σ  : Volatility (used to set *u*, *d*)\n"
+        "- N  : Number of time steps in the tree",
         [
-            r"\text{Option price} = \sum_{i=0}^N \binom{N}{i} p^i (1-p)^{N-i} V_i",
-            r"p = \text{risk-neutral probability}, \quad V_i = \text{value at node } i"
+            r"u = e^{\sigma\sqrt{\Delta t}},\; d = e^{-\sigma\sqrt{\Delta t}},\;"
+            r"p = \frac{e^{r\Delta t} - d}{u - d},\; \Delta t = T/N",
+            r"Option\ value = \text{discounted expected value under } p \text{ with early-exercise checks}"
         ]
     ),
+
     "Heston": (
-        "The Heston model is a stochastic volatility model for option pricing. It assumes that the asset volatility follows its own mean-reverting process, "
-        "allowing for volatility smiles and skews.\n\n"
+        "Stochastic-volatility model in which variance itself follows a square-root (CIR) "
+        "process, producing volatility smiles/skews observed in markets.\n\n"
         "**Parameters:**\n"
-        "- S: Spot price\n"
-        "- v₀: Initial variance\n"
-        "- κ: Mean reversion speed\n"
-        "- θ: Long-term variance\n"
-        "- σ: Volatility of variance (vol of vol)\n"
-        "- ρ: Correlation between asset and variance\n"
-        "- r: Risk-free rate\n"
-        "- T: Time to maturity",
+        "- S      : Current spot price\n"
+        "- v0     : Current variance (σ₀²)\n"
+        "- κ      : Mean-reversion speed of the variance process\n"
+        "- θ      : Long-run (equilibrium) variance level\n"
+        "- σ_v    : Volatility of variance (\"vol-of-vol\")\n"
+        "- ρ      : Correlation between Brownian motions of price and variance\n"
+        "- r      : Risk-free rate\n"
+        "- q      : Dividend yield (if any)\n"
+        "- T      : Time to maturity",
         [
-            r"dS_t = r S_t dt + \sqrt{v_t} S_t dW_t^S",
-            r"dv_t = \kappa(\theta - v_t)dt + \sigma\sqrt{v_t} dW_t^v"
+            r"dS_t = (r - q) S_t dt + \sqrt{v_t}\, S_t dW_t^{(1)}",
+            r"dv_t = \kappa(\theta - v_t)dt + \sigma_v \sqrt{v_t}\, dW_t^{(2)}",
+            r"dW_t^{(1)} dW_t^{(2)} = \rho dt"
         ]
     ),
-    "Hull-White": (
-        "The Hull-White model is used for pricing interest rate derivatives. It models the short rate as a mean-reverting process, allowing for closed-form solutions "
-        "for zero-coupon bonds and bond options.\n\n"
+
+    "Hull-White (1-factor)": (
+        "Short-rate model for fixed-income derivatives; the continuously-compounded short rate "
+        "reverts to a time-dependent mean level, enabling analytic zero-bond prices and efficient "
+        "tree/Monte-Carlo methods for bond options, swaptions, etc.\n\n"
         "**Parameters:**\n"
-        "- r₀: Initial short rate\n"
-        "- a: Mean reversion speed\n"
-        "- θ(t): Time-dependent drift term\n"
-        "- σ: Volatility\n"
-        "- T: Maturity",
+        "- r0 : Initial short rate *r(0)*\n"
+        "- a  : Mean-reversion speed (higher ⇒ faster pull to θ)\n"
+        "- θ(t): Time-dependent mean level calibrated to the initial yield curve\n"
+        "- σ  : Volatility of the short rate\n"
+        "- T  : Horizon of the derivative being priced",
         [
-            r"dr_t = (\theta(t) - a r_t)dt + \sigma dW_t"
+            r"dr_t = \bigl(\theta(t) - a\,r_t\bigr) dt + \sigma\, dW_t"
         ]
     ),
+
     "Barrier Option": (
-        "Barrier options are path-dependent options that are activated or extinguished if the underlying asset crosses a specified barrier level. Pricing formulas depend "
-        "on the type of barrier (up-and-out, down-and-in, etc.).\n\n"
+        "Path-dependent option that is knocked *in* or *out* when the underlying breaches a "
+        "preset barrier *H*.  Pricing under Black-Scholes uses closed-form solutions that adjust "
+        "vanilla prices for the probability of hitting the barrier.\n\n"
         "**Parameters:**\n"
-        "- S: Spot price\n"
-        "- K: Strike price\n"
-        "- H: Barrier level\n"
-        "- T: Time to maturity\n"
-        "- r: Risk-free rate\n"
-        "- σ: Volatility",
+        "- S  : Current spot price\n"
+        "- K  : Strike price\n"
+        "- H  : Barrier level (up/down)\n"
+        "- T  : Time to maturity\n"
+        "- r  : Risk-free rate\n"
+        "- q  : Dividend yield\n"
+        "- σ  : Volatility\n"
+        "- barrier_type : 'up-and-out', 'down-and-in', etc.",
         [
-            r"C_{\text{UO}} = C_{\text{BS}} - C_{\text{adj}}",
-            r"\text{(Up-and-out call as example)}"
+            r"C_{\text{up-out}} = C_{\text{BS}} - C_{\text{adj}} \quad (\text{one example})"
         ]
     ),
+
     "Lookback Option": (
-        "Lookback options are path-dependent options whose payoff depends on the maximum or minimum asset price during the option's life. "
-        "They are useful for hedging against missed opportunities.\n\n"
+        "Path-dependent contract whose payoff depends on the maximum (or minimum) underlying "
+        "price observed over the life of the option.  Analytical formulas exist for European "
+        "lookbacks under Black-Scholes; American versions require trees/MC.\n\n"
         "**Parameters:**\n"
-        "- S: Spot price\n"
-        "- K: Strike price\n"
-        "- S_{max} or S_{min}: Observed extreme price\n"
-        "- T: Time to maturity\n"
-        "- r: Risk-free rate\n"
-        "- σ: Volatility",
+        "- S         : Current spot price\n"
+        "- K         : Strike price (used for **fixed-strike** variant; omit for floating)\n"
+        "- S_max/S_min: Running maximum or minimum of the spot (captured during pricing)\n"
+        "- T         : Time to maturity\n"
+        "- r         : Risk-free rate\n"
+        "- q         : Dividend yield\n"
+        "- σ         : Volatility",
         [
-            r"\text{Payoff (fixed strike call)} = \max(S_{\max} - K, 0)"
+            r"Payoff_{fixed\ strike\ call} = \max(S_{\max} - K,\; 0)",
+            r"Payoff_{floating\ strike\ call} = \max(S_T - S_{\min},\; 0)"
         ]
     ),
+
     "American Option": (
-        "American options can be exercised at any time before expiry. They are typically priced using binomial trees or finite difference methods, as there is no closed-form solution.\n\n"
+        "Option exercisable at any time up to expiry. No closed-form price under "
+        "Black-Scholes; lattice (binomial/trinomial), finite-difference, or simulation "
+        "methods with early-exercise logic are used.\n\n"
         "**Parameters:**\n"
-        "- S: Spot price\n"
-        "- K: Strike price\n"
-        "- T: Time to maturity\n"
-        "- r: Risk-free rate\n"
-        "- σ: Volatility",
+        "- S  : Current spot price\n"
+        "- K  : Strike price\n"
+        "- T  : Time to maturity\n"
+        "- r  : Risk-free rate\n"
+        "- q  : Dividend yield\n"
+        "- σ  : Volatility\n"
+        "- method : Numerical scheme (e.g., 'binomial', 'finite_difference')",
         [
-            r"\text{Price} = \max(\text{Intrinsic Value}, \text{Discounted Expected Value})"
+            r"Price = \max\bigl(\text{intrinsic},\ \text{discounted expected continuation}\bigr)"
         ]
     ),
 }
